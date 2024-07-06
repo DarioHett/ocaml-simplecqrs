@@ -7,7 +7,12 @@ type create_type =
   | New
 
 module type AggregateRoot = sig
-  type t
+  type t = { changes : event list
+    ; id : string
+    ; version : int
+    ; name : string
+    ; activated : bool
+    }
 
   val get_uncommited_changes : t -> event list
   val mark_changes_as_committed : t -> t
@@ -22,8 +27,7 @@ module type AggregateRoot = sig
 end
 
 module InventoryItem : AggregateRoot = struct
-  type t =
-    { changes : event list
+  type t = { changes : event list
     ; id : string
     ; version : int
     ; name : string

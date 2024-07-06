@@ -17,7 +17,7 @@ module type Repository = sig
   val replay : unit -> event list
 end
 
-module EventStorage : Repository = struct
+module EventStorage : Repository with type t = InventoryItem.t = struct
   type t = InventoryItem.t
 
   let _storage = Queue.create ()
