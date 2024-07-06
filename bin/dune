@@ -1,4 +1,4 @@
 (executable
  (public_name simplecqrs)
  (name main)
- (libraries simplecqrs))
+ (libraries simplecqrs core core_unix async async_unix ))
