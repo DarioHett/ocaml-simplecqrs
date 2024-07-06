@@ -20,10 +20,6 @@ module type AggregateRoot = sig
   val check_in : t -> int -> t
   val deactivate : t -> t
 end
-(* = {changes : event list ; id : string
-  ; version : int
-  ; name : string
-  ; activated : bool} *)
 
 module InventoryItem : AggregateRoot = struct
   type t =
