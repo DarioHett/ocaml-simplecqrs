@@ -1,0 +1,10 @@
+(library
+ (libraries core async)
+ (name simplecqrs)
+ (preprocess (pps ppx_yojson_conv)))
+
+(env
+ (dev 
+ (flags (:standard -w -32))
+ )
+ )
