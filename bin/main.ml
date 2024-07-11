@@ -1,73 +1,50 @@
-open Core
+open! Core
 open Async
-open Async_kernel
-open Simplecqrs
-open Simplecqrs.Eventstorage
 
-(* Wiring *)
-let cmd_reader, cmd_writer = Pipe.create ()
-let inventory_detail_reader, inventory_detail_writer = Pipe.create ()
-let inventory_list_reader, inventory_list_writer = Pipe.create ()
 
-let () =
-  (*  *)
-  let event_bus =
-    let subscribe = Fn.flip Eventbus.subscribe in
-    Eventbus.init ()
-    |> subscribe (fun evt -> Pipe.write_without_pushback inventory_detail_writer evt)
-    |> subscribe (fun evt -> Pipe.write_without_pushback inventory_list_writer evt)
-    |> subscribe (fun evt -> Events.to_string evt |> print_endline)
-  in
-  let handler = Commandhandler.handler (EventStorage.save ~bus:event_bus) in
-  (* Set up tas *)
-  let rec loop () =
-    Pipe.read cmd_reader
-    >>= function
-    | `Eof -> Deferred.return ()
-    | `Ok cmd ->
-      handler cmd;
-      loop ()
-  in
-  ignore (loop ())
+let query_exn postgres string =
+  let%bind result = Postgres_async.query_expect_no_data postgres string in
+  Or_error.ok_exn result;
+  return ()
 ;;
 
-(* Start view tasks *)
-let () = ignore (Readmodel.inventory_detail_task inventory_detail_reader)
-let () = ignore (Readmodel.inventory_list_task inventory_list_reader)
-
-let () =
-  let host_and_port =
-    Tcp.Server.create
-      ~on_handler_error:`Raise
-      (Tcp.Where_to_listen.of_port 8000)
-      (fun _ reader writer ->
-         Deferred.create (fun finished ->
-           let rec loop () =
-             upon (Reader.read_line reader) (function
-               | `Ok x ->
-                 let cmd =
-                   try
-                     Yojson.Safe.from_string x
-                     |> Commands.command_of_yojson
-                     |> fun x -> Some x
-                   with
-                   | _ -> None
-                 in
-                 let _ =
-                   match cmd with
-                   | Some c ->
-                     Pipe.write_without_pushback cmd_writer c;
-                     "Command dispatched.\n" |> Writer.write writer
-                   | None -> "Command not recognized.\n" |> Writer.write writer
-                 in
-                 loop ()
-               | `Eof ->
-                 Ivar.fill finished ();
-                 print_endline "Closed connection.")
-           in
-           loop ()))
+let print_notifications ?saw_notification postgres ~channel =
+  let%bind result =
+    Postgres_async.listen_to_notifications postgres ~channel ~f:(fun ~pid:_ ~payload ->
+      Option.iter saw_notification ~f:(fun bvar -> Bvar.broadcast bvar ());
+      print_s [%message "notification" ~channel ~payload])
   in
-  upon host_and_port (fun _ -> ())
+  Or_error.ok_exn result;
+  return ()
 ;;
 
+let try_login ?(user = "postgres") ?password ?(database = "postgres") () =
+    let saw_notification = Bvar.create () in
+    let print_notifications = print_notifications ~saw_notification in
+    let _ = Postgres_async.with_connection
+      ~ssl_mode:Postgres_async.Ssl_mode.Disable
+      ~server:(Tcp.Where_to_connect.of_host_and_port { host = "localhost"; port = 5432})
+      ~user
+      ?password
+      ~database
+      ~on_handler_exception:`Raise
+      (fun postgres ->
+        let%bind () = print_notifications postgres ~channel:"a"  in
+        let rec loop () = 
+          let sync1 = Bvar.wait saw_notification in
+          let%bind () = sync1 in
+          loop () in
+        loop ()) in
+  return ()
+;;
+let () =
+    ignore(
+    (* [%expect {| OK; user:postgres database:postgres |}]; *)
+    (* let%bind () = try_login ~password:"5606edd27bf95d6f5ad7ffd237443055" () in *)
+    let%bind () = try_login ~password:"mysecretpassword" () in
+    (* [%expect {| OK; user:postgres database:postgres |}]; *)
+    Deferred.return ()) 
+  
+
+let () = print_endline "lol"
 let () = never_returns (Scheduler.go ())

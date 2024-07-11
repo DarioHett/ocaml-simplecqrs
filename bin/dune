@@ -1,4 +1,10 @@
-(executable
- (public_name simplecqrs)
- (name main)
- (libraries simplecqrs core core_unix async async_unix ))
+(executables
+ (names main main2 main3)
+ (libraries simplecqrs core core_unix async async_unix postgres_async)
+ (preprocess (pps ppx_jane)))
+
+(env
+ (dev 
+ (flags (:standard -w -32 -w -26))
+ )
+ )
