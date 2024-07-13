@@ -1,7 +1,15 @@
 (executables
- (names main main2 main3)
+ (names main main2 server client)
  (libraries simplecqrs core core_unix async async_unix postgres_async)
  (preprocess (pps ppx_jane)))
+
+;  (executable
+;  (modes js)
+;  (name web)
+;  (libraries bonsai.web bonsai.web_ui_auto_generated bonsai.web_ui_form
+;    )
+;  (preprocess
+;   (pps ppx_jane ppx_css bonsai.ppx_bonsai)))
 
 (env
  (dev 
