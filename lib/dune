@@ -1,7 +1,7 @@
 (library
- (libraries core async)
+ (libraries core async_kernel postgres_async)
  (name simplecqrs)
- (preprocess (pps ppx_yojson_conv)))
+ (preprocess (pps ppx_yojson_conv ppx_jane)))
 
 (env
  (dev 

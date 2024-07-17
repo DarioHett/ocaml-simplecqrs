@@ -1,6 +1,6 @@
 (executables
- (names main main2 server client)
- (libraries simplecqrs core core_unix async async_unix postgres_async)
+ (names main main2 server client api readers)
+ (libraries simplecqrs core core_unix async async_unix postgres_async cohttp cohttp-async)
  (preprocess (pps ppx_jane)))
 
 ;  (executable
