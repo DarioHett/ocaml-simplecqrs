@@ -4,8 +4,9 @@ open Async_kernel
 
 let query_exn postgres string =
   let%bind result = Postgres_async.query_expect_no_data postgres string in
-  Or_error.ok_exn result;
-  return ()
+  match result with
+  | Error _ -> return ()
+  | Ok _ -> return ()
 ;;
 
 let receive_notifications ?bvar  postgres ~channel =
