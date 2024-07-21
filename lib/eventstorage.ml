@@ -8,44 +8,47 @@ type event_desciptor =
   ; event_data : event
   }
 
+let to_string evtd = sprintf
+                "agg_id:%s, version:%d, event:%s"
+                evtd.agg_id
+                evtd.version
+                (Events.yojson_of_event evtd.event_data |> Yojson.Safe.to_string)
+
 module type Repository = sig
   type t
 
-  val save : t -> int -> bus:Eventbus.t -> unit
+  val save : t -> bus:Eventbus.t -> handle_descriptors:(event_desciptor -> unit) -> unit
   val get_history_by_id : string -> t option
   val show_item_history : string -> unit
   val replay : unit -> event list
 end
 
-module EventStorage : Repository with type t = InventoryItem.t = struct
-  type t = InventoryItem.t
+module type Storage_intf = sig
+  val _storage : event_desciptor Base.Queue.t
+end
 
-  let _storage = Queue.create ()
+module Make(Storage : Storage_intf) : Repository with type t = InventoryItem.t = struct
+  type t = InventoryItem.t
+  include Storage
 
   let event_descriptors id =
     Queue.filter_map _storage ~f:(fun (ed : event_desciptor) ->
-      match String.equal (Events.id ed.event_data) id with
+      match String.equal ed.agg_id id with
       | true -> Some ed
       | false -> None)
     |> Queue.to_list
   ;;
 
-  let save (aggregate : InventoryItem.t) expected_version ~bus =
-    let original_data = event_descriptors aggregate.id in
-    let changes =
-      match List.rev original_data with
-      | [] -> InventoryItem.get_uncommited_changes aggregate
-      | last_item_descriptor :: _ ->
-        (match Int.equal last_item_descriptor.version expected_version with
-         | true -> InventoryItem.get_uncommited_changes aggregate
-         | false -> [])
+  let save (aggregate : InventoryItem.t) ~bus ~handle_descriptors =
+    let changes = InventoryItem.get_uncommited_changes aggregate
     in
     Eventbus.publish bus changes;
     let descriptors =
       List.mapi changes ~f:(fun i evt ->
-        { agg_id = aggregate.id; version = i + 1; event_data = evt })
+        { agg_id = aggregate.id; version = aggregate.version + i + 1; event_data = evt })
     in
-    List.iter descriptors ~f:(Queue.enqueue _storage)
+    List.iter descriptors ~f:(Queue.enqueue _storage);
+    List.iter descriptors ~f:handle_descriptors
   ;;
 
   let get_history_by_id id =
@@ -64,5 +67,3 @@ module EventStorage : Repository with type t = InventoryItem.t = struct
 
   let replay () = _storage |> Queue.map ~f:(fun ed -> ed.event_data) |> Queue.to_list
 end
-
-include EventStorage
