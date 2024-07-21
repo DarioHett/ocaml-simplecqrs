@@ -3,7 +3,8 @@ open Domain
 open Commands
 open Eventstorage
 
-let handler (save : InventoryItem.t -> int -> unit) (msg : command) =
+let handler event_storage (save : InventoryItem.t -> unit) (msg : command) =
+  let module EventStorage = (val event_storage : Repository with type t = InventoryItem.t) in
   let fetchitem id (f : InventoryItem.t -> InventoryItem.t) =
     EventStorage.get_history_by_id id |> Option.map ~f
   in
@@ -29,7 +30,14 @@ let handler (save : InventoryItem.t -> int -> unit) (msg : command) =
       let itm = fetchitem id (fun itm -> InventoryItem.change_name itm new_name) in
       itm, version
   in
+  begin
   match item with
-  | Some item -> save item version
-  | None -> ignore ()
+  | Some item -> 
+    begin 
+    match (Int.equal item.version version) with
+    | true -> save item 
+    | false -> ()
+    end
+  | None -> ()
+  end
 ;;
