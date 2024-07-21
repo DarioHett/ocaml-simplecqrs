@@ -1,5 +1,6 @@
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
+(* `agg_id` * `version` * ... *)
 type command =
   | CreateInventoryItem of string * string
   | DeactivateInventoryItem of string * int
