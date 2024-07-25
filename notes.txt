@@ -1,0 +1,11 @@
+UI:
+Make simple Bonsai client, push button => Create random item
+Create simple query and integrate w/ Commands
+
+App:
+Lift server to Cohttp-Async
+Integrate postgres for persistence
+Read-models: Replay events on startup (`instantiate state`)
+
+Learning:
+Do not import async, when Async_rpc_kernel will do.

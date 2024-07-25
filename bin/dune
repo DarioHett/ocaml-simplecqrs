@@ -1,18 +1,6 @@
-(executables
- (names main main2 server client api readers)
- (libraries simplecqrs core core_unix async async_unix postgres_async cohttp cohttp-async)
- (preprocess (pps ppx_jane)))
-
-;  (executable
-;  (modes js)
-;  (name web)
-;  (libraries bonsai.web bonsai.web_ui_auto_generated bonsai.web_ui_form
-;    )
-;  (preprocess
-;   (pps ppx_jane ppx_css bonsai.ppx_bonsai)))
-
-(env
- (dev 
- (flags (:standard -w -32 -w -26))
- )
+(executable
+ (public_name zz_di)
+ (name main)
+ (libraries domain app api infra core core_unix async async_kernel postgres_async)
+ (preprocess (pps ppx_yojson_conv ppx_jane ppx_let))
  )

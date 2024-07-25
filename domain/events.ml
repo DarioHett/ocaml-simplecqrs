@@ -19,7 +19,7 @@ let id = function
 let to_string = function
   | InventoryItemCreated (i, n) -> "Item " ^ n ^ " created (id:" ^ i ^ ")"
   | InventoryItemDeactivated i -> "Item deactivated (id:" ^ i ^ ")"
-  | InventoryItemRenamed (i, n) -> "Item renamed to " ^ n ^ " created (id:" ^ i ^ ")"
+  | InventoryItemRenamed (i, n) -> "Item renamed to " ^ n ^ " (id:" ^ i ^ ")"
   | ItemsCheckedInToInventory (i, c) ->
     "Check-in " ^ Int.to_string c ^ " of item (id:" ^ i ^ ")"
   | ItemsRemovedFromInventory (i, c) ->

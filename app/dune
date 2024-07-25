@@ -1,0 +1,7 @@
+(library
+ (name app)
+ (libraries domain core async async_kernel expect_test_helpers_async)
+ (inline_tests)
+ (preprocess (pps ppx_yojson_conv ppx_jane ppx_expect))
+ )
+
