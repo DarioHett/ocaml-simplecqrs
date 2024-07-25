@@ -1,5 +1,5 @@
 (executable
- (public_name zz_di)
+ (public_name simplecqrs)
  (name main)
  (libraries domain app api infra core core_unix async async_kernel postgres_async)
  (preprocess (pps ppx_yojson_conv ppx_jane ppx_let))
